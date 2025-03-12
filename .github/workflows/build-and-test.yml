@@ -1,0 +1,48 @@
+name: Build VLC-Android Debug APK
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+
+    - name: Set up Android SDK
+      uses: android-actions/setup-android@v3
+      with:
+        ndk: '25.1.8937393' 
+
+    - name: Create local.properties
+      run: |
+        echo "sdk.dir=$ANDROID_SDK_ROOT" > medialibrary/local.properties
+      working-directory: ./
+
+    - name: Grant Permissions to Gradle Wrapper
+      run: chmod +x gradlew
+      working-directory: ./
+
+    - name: Build Debug APK
+      run: ./gradlew assembleDebug
+      working-directory: ./
+    
+    - name: Upload APK as Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: vlc-android-debug-apk
+        path:  application/app/build/outputs/apk/debug/*.apk
+        if-no-files-found: error
