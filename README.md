@@ -1,3 +1,16 @@
+# Hands-on automated mobile testing project
+
+In this repo, cloned from the official VLC-Android repo (see description), I write my own build and test Github Action. Currently, the CI script only builds the debug version of the application APK. Future steps:
+
+1. Assemble tests
+2. Run existing tests on android emulator
+3. Add new Espresso test cases
+4. Switch frameworks to Appium
+5. Testing to be cross-platform
+
+
+
+
 # VLC for Android
 
 This is the official **Android** port of [VLC](https://videolan.org/vlc/).
