@@ -1,48 +1,75 @@
 name: Build VLC-Android Debug APK
-
-on:
+'on':
   push:
     branches:
       - main
   pull_request:
     branches:
       - main
-
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
-    - name: Checkout Repository
-      uses: actions/checkout@v4
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: temurin
+      - name: Enable KVM group perms
+        run: >
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666",
+          OPTIONS+="static_node=kvm"' | sudo tee
+          /etc/udev/rules.d/99-kvm4all.rules
 
-    - name: Set up JDK 17
-      uses: actions/setup-java@v4
-      with:
-        java-version: '17'
-        distribution: 'temurin'
+          sudo udevadm control --reload-rules
 
-    - name: Set up Android SDK
-      uses: android-actions/setup-android@v3
-      with:
-        ndk: '25.1.8937393' 
+          sudo udevadm trigger --name-match=kvm
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          ndk: 25.1.8937393
+      - name: Create local.properties
+        run: |
+          echo "sdk.dir=$ANDROID_SDK_ROOT" > medialibrary/local.properties
+        working-directory: ./
+      - name: Grant Permissions to Gradle Wrapper
+        run: chmod +x gradlew
+        working-directory: ./
+      - name: Cache Gradle
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: >-
+            ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*',
+            '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+      - name: Build Debug APK and Test APK
+        run: >-
+          ./gradlew :application:vlc-android:assembleDebug
+          :application:vlc-android:assembleDebugAndroidTest --stacktrace
+        working-directory: ./
+      - name: Start Emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          arch: x86_64
+          profile: Nexus 6
+          script: echo "Emulator started"
+      - name: Install APKs
+        run: >
+          adb install -t
+          application/app/build/outputs/apk/debug/VLC-Android*.apk
 
-    - name: Create local.properties
-      run: |
-        echo "sdk.dir=$ANDROID_SDK_ROOT" > medialibrary/local.properties
-      working-directory: ./
-
-    - name: Grant Permissions to Gradle Wrapper
-      run: chmod +x gradlew
-      working-directory: ./
-
-    - name: Build Debug APK
-      run: ./gradlew assembleDebug
-      working-directory: ./
-    
-    - name: Upload APK as Artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: vlc-android-debug-apk
-        path:  application/app/build/outputs/apk/debug/*.apk
-        if-no-files-found: error
+          adb install -t
+          application/vlc-android/build/outputs/apk/androidTest/debug/*androidTest*.apk
+      - name: Run Tests with Timeout
+        run: >
+          ./gradlew :application:vlc-android:connectedDebugAndroidTest
+          --no-daemon --stacktrace --max-workers 2
+          -Pandroid.testInstrumentationRunnerArguments.numShards=4
+        timeout-minutes: 15
