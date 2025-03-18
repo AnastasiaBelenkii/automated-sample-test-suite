@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="org.videolan.vlc.test">
+
+    <!-- REQUIRED: Instrumentation declaration -->
+    <instrumentation
+        android:name="androidx.test.runner.AndroidJUnitRunner"
+        android:targetPackage="org.videolan.vlc"
+        android:process=":vlc_test_runner" 
+        android:label="VLC Instrumentation Tests"
+        android:functionalTest="true" />
+
+    <!-- Mirror key components from main app -->
+    <application>
+        <!-- Include test-only components -->
+        <uses-library android:name="android.test.runner" />
+
+        <!-- Replicate VLC's critical permissions -->
+        <uses-permission android:name="android.permission.INTERNET"/>
+        <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+        <uses-permission android:name="android.permission.WAKE_LOCK"/>
+        <uses-permission android:name="org.videolan.vlc.permission.READ_EXTENSION_DATA"/>
+
+        <!-- Add test-specific providers -->
+        <provider
+            android:name="androidx.test.core.TestContentProvider"
+            android:authorities="${applicationId}.test.provider"
+            android:exported="false"/>
+    </application>
+
+</manifest>
