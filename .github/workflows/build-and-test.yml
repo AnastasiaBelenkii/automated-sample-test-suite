@@ -62,14 +62,10 @@ jobs:
           script: |
             echo "Emulator started"
 
-            adb install -t
-            application/app/build/outputs/apk/debug/VLC-Android*.apk
+            adb install -t application/app/build/outputs/apk/debug/VLC-Android*.apk
 
-            adb install -t
-            application/vlc-android/build/outputs/apk/androidTest/debug/*androidTest*.apk
-            ./gradlew :application:vlc-android:connectedDebugAndroidTest
-            --stacktrace --max-workers 2
-            -Pandroid.testInstrumentationRunnerArguments.numShards=4
+            adb install -t application/vlc-android/build/outputs/apk/androidTest/debug/*androidTest*.apk
+            ./gradlew :application:vlc-android:connectedDebugAndroidTest --stacktrace --max-workers 2 -Pandroid.testInstrumentationRunnerArguments.numShards=4
 
             adb shell am force-stop org.videolan.vlc
             adb emu kill
