@@ -53,23 +53,24 @@ jobs:
           ./gradlew :application:vlc-android:assembleDebug
           :application:vlc-android:assembleDebugAndroidTest --stacktrace
         working-directory: ./
-      - name: Start Emulator
+      - name: Start Emulator and Install APKs
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 34
           arch: x86_64
           profile: Nexus 6
-          script: echo "Emulator started"
-      - name: Install APKs
-        run: >
-          adb install -t
-          application/app/build/outputs/apk/debug/VLC-Android*.apk
+          script: |
+            echo "Emulator started"
 
-          adb install -t
-          application/vlc-android/build/outputs/apk/androidTest/debug/*androidTest*.apk
-      - name: Run Tests with Timeout
-        run: >
-          ./gradlew :application:vlc-android:connectedDebugAndroidTest
-          --no-daemon --stacktrace --max-workers 2
-          -Pandroid.testInstrumentationRunnerArguments.numShards=4
+            adb install -t
+            application/app/build/outputs/apk/debug/VLC-Android*.apk
+
+            adb install -t
+            application/vlc-android/build/outputs/apk/androidTest/debug/*androidTest*.apk
+            ./gradlew :application:vlc-android:connectedDebugAndroidTest
+            --stacktrace --max-workers 2
+            -Pandroid.testInstrumentationRunnerArguments.numShards=4
+
+            adb shell am force-stop org.videolan.vlc
+            adb emu kill
         timeout-minutes: 15
